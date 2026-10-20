@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dabar Hebreo</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F6F1EC" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16121A" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Tarjetas de repetición espaciada para aprender vocabulario de hebreo bíblico.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Dabar">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gentium+Book+Plus:ital,wght@0,400;0,700;1,400&family=Noto+Serif+Hebrew:wght@400;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: one-screen study app — header, single focused card, fixed tab bar. Wine / gold / ink. */
+:root{
+  color-scheme:light;
+  --bg:#F6F1EC; --surface:#FFFDFB; --sunk:#EFE7E0; --ink:#1F1A1C; --muted:#6E6266;
+  --line:#E2D7CF; --wine:#7A2333; --wine-soft:#F3E3E4; --gold:#A87A2C; --gold-soft:#F5EAD3;
+  --ok:#2F6B4A; --ok-soft:#E1EFE6; --bad:#A3302F; --bad-soft:#F6E0DD;
+  --f-heb:"Noto Serif Hebrew","SBL Hebrew","Times New Roman",serif;
+  --f-tr:"Gentium Book Plus","Gentium Plus",Georgia,serif;
+  --f-ui:"Source Sans 3",-apple-system,"Segoe UI",sans-serif;
+  --tab-h:64px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#16121A; --surface:#211B24; --sunk:#2A232D; --ink:#F1E9E6; --muted:#A99BA0;
+  --line:#3A3039; --wine:#E07A8E; --wine-soft:#3A1F28; --gold:#DDB467; --gold-soft:#3A2F1C;
+  --ok:#7CC79A; --ok-soft:#1D3227; --bad:#F08A80; --bad-soft:#3B1F1D; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#16121A; --surface:#211B24; --sunk:#2A232D; --ink:#F1E9E6; --muted:#A99BA0;
+  --line:#3A3039; --wine:#E07A8E; --wine-soft:#3A1F28; --gold:#DDB467; --gold-soft:#3A2F1C;
+  --ok:#7CC79A; --ok-soft:#1D3227; --bad:#F08A80; --bad-soft:#3B1F1D; color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:16px;line-height:1.45;
+  -webkit-tap-highlight-color:transparent;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.heb{font-family:var(--f-heb);direction:rtl;unicode-bidi:isolate}
+.tr{font-family:var(--f-tr);font-style:italic}
+
+.app{max-width:560px;margin:0 auto;min-height:100%;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:12px calc(var(--tab-h) + env(safe-area-inset-bottom,0px) + 20px)}
+.view{display:flex;flex-direction:column;gap:18px}
+
+/* header */
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-top:6px}
+.brand h1{margin:0;font-family:var(--f-tr);font-weight:700;font-size:28px;letter-spacing:.01em}
+.brand h1 .heb{color:var(--wine);font-weight:600;margin-inline-start:6px;font-size:26px}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* home */
+.hero{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.due-row{display:flex;align-items:flex-end;gap:14px}
+.due-num{font-family:var(--f-tr);font-size:64px;line-height:.9;font-weight:700;color:var(--wine);font-variant-numeric:tabular-nums}
+.due-lbl{padding-bottom:6px;color:var(--muted)}
+.due-lbl b{color:var(--ink);display:block;font-size:17px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--sunk);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.progress{height:6px;border-radius:6px;background:var(--sunk);overflow:hidden}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--wine),var(--gold));border-radius:6px;transition:width .4s}
+
+.modes{display:grid;gap:12px}
+.mode{display:flex;align-items:center;gap:16px;text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;transition:transform .12s,border-color .12s}
+.mode:active{transform:scale(.985)}
+.mode:hover{border-color:var(--gold)}
+.mode .glyph{flex:none;width:56px;height:56px;border-radius:14px;display:grid;place-items:center;font-family:var(--f-heb);font-size:30px;line-height:1}
+.mode.read .glyph{background:var(--wine-soft);color:var(--wine)}
+.mode.write .glyph{background:var(--gold-soft);color:var(--gold)}
+.mode h2{margin:0;font-size:18px}
+.mode p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.mode .count{margin-inline-start:auto;font-variant-numeric:tabular-nums;font-weight:700;font-size:15px;color:var(--muted);flex:none}
+
+.verse{border-top:1px solid var(--line);padding-top:14px;color:var(--muted);font-size:14px;display:flex;flex-direction:column;gap:4px}
+.verse .heb{font-size:20px;color:var(--ink);line-height:1.8}
+
+/* study */
+.topbar{display:flex;align-items:center;gap:12px}
+.icon-btn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);font-size:20px;flex:none}
+.topbar .progress{flex:1}
+.topbar .left{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:600;font-size:14px;min-width:3ch;text-align:end}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:24px 20px;min-height:300px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;position:relative}
+.card .tag{position:absolute;top:14px;inset-inline-start:16px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--gold)}
+.card .freq{position:absolute;top:14px;inset-inline-end:16px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.big-heb{font-family:var(--f-heb);direction:rtl;font-size:clamp(64px,22vw,96px);line-height:1.35;font-weight:400;margin:6px 0 0}
+.big-es{font-family:var(--f-tr);font-size:clamp(28px,8vw,38px);line-height:1.2;font-weight:700;text-wrap:balance}
+.answer{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;padding-top:14px;border-top:1px dashed var(--line);animation:rise .25s ease-out}
+.answer .tr{font-size:24px;color:var(--wine)}
+.answer .mean{font-size:20px;font-weight:600;text-wrap:balance}
+.answer .heb-ans{font-size:52px;line-height:1.4}
+.note{font-size:14px;color:var(--muted);max-width:42ch;text-wrap:pretty}
+@keyframes rise{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.primary{width:100%;padding:16px;border-radius:14px;background:var(--wine);color:var(--surface);font-weight:700;font-size:17px}
+.ghost{padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-size:14px;font-weight:600}
+
+.grades{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.grade{padding:12px 4px 10px;border-radius:14px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:700;font-size:15px}
+.grade small{font-weight:400;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.grade.again{color:var(--bad)} .grade.hard{color:var(--gold)} .grade.good{color:var(--ok)} .grade.easy{color:var(--wine)}
+.grade.suggest{border-width:2px;border-color:currentColor;background:var(--sunk)}
+
+/* write mode */
+.slot{width:100%;min-height:76px;border-radius:14px;background:var(--sunk);border:2px solid transparent;display:flex;align-items:center;justify-content:center;padding:8px 14px;font-family:var(--f-heb);direction:rtl;font-size:42px;line-height:1.3;position:relative}
+.slot.empty::after{content:"Escribe en hebreo";font-family:var(--f-ui);font-size:15px;color:var(--muted);direction:ltr}
+.slot .caret{display:inline-block;width:2px;height:40px;background:var(--wine);margin-inline-start:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.slot.ok{border-color:var(--ok);background:var(--ok-soft)}
+.slot.bad{border-color:var(--bad);background:var(--bad-soft)}
+.diff{display:flex;flex-direction:column;gap:6px;align-items:center}
+.diff .row{display:flex;direction:rtl;gap:4px;flex-wrap:wrap;justify-content:center}
+.diff .ch{font-family:var(--f-heb);font-size:28px;width:40px;height:46px;display:grid;place-items:center;border-radius:10px;background:var(--sunk)}
+.diff .ch.ok{background:var(--ok-soft);color:var(--ok)}
+.diff .ch.bad{background:var(--bad-soft);color:var(--bad)}
+.diff .ch.miss{background:transparent;border:1.5px dashed var(--bad);color:var(--bad)}
+.diff .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+.hint-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+.kbd{display:flex;flex-direction:column;gap:6px;direction:rtl;user-select:none;-webkit-user-select:none}
+.kbd .r{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.key{height:48px;border-radius:10px;background:var(--surface);border:1px solid var(--line);box-shadow:0 1px 0 var(--line);font-family:var(--f-heb);font-size:24px;display:grid;place-items:center;transition:background .08s}
+.key:active{background:var(--gold-soft)}
+.key.fin{color:var(--wine)}
+.key.fn{font-family:var(--f-ui);font-size:15px;font-weight:600;color:var(--muted)}
+.kbd .vr{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.key.v{height:54px;background:var(--wine-soft);border-color:transparent;box-shadow:none;display:flex;flex-direction:column;gap:0;line-height:1;padding-top:4px}
+.key.v .g{font-size:30px;height:30px;color:var(--wine)}
+.key.v small{font-family:var(--f-ui);font-size:9.5px;color:var(--muted);direction:ltr;letter-spacing:0}
+.kbd-sep{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;direction:ltr;text-align:start;padding:4px 2px 0}
+.diff .ch{width:auto;min-width:40px;padding:0 4px}
+
+/* list */
+.search{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit}
+.words{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.w{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);text-align:start;width:100%}
+.w:first-child{border-top:0}
+.w .n{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.w .m{min-width:0}
+.w .m b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w .m .tr{font-size:15px;color:var(--wine)}
+.w .heb{font-size:30px;line-height:1.3}
+.w .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-inline-start:6px;vertical-align:middle;background:var(--line)}
+.w .dot.l1{background:var(--gold)} .w .dot.l2{background:var(--ok)}
+.w-detail{padding:4px 14px 14px 60px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted);border-top:0}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.legend span{display:flex;align-items:center;gap:6px}
+
+/* settings */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.set{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;border-top:1px solid var(--line)}
+.set:first-child{border-top:0}
+.set .t b{display:block;font-weight:600}
+.set .t span{font-size:13px;color:var(--muted)}
+.stepper{display:flex;align-items:center;gap:4px;background:var(--sunk);border-radius:10px;padding:3px}
+.stepper button{width:34px;height:34px;border-radius:8px;font-size:20px;font-weight:700}
+.stepper output{min-width:2.5ch;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.switch{width:52px;height:32px;border-radius:16px;background:var(--line);position:relative;flex:none;transition:background .15s}
+.switch::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:26px;height:26px;border-radius:50%;background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.switch[aria-checked="true"]{background:var(--wine)}
+.switch[aria-checked="true"]::after{transform:translateX(20px)}
+.danger{color:var(--bad);font-weight:600}
+.confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.confirm .yes{background:var(--bad);color:var(--surface);padding:8px 12px;border-radius:10px;font-weight:600;font-size:14px}
+.help{font-size:14px;color:var(--muted);display:flex;flex-direction:column;gap:6px;padding:0 4px}
+.help ol{margin:0;padding-inline-start:20px}
+
+/* done */
+.done{text-align:center;padding:30px 10px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.done .heb{font-size:56px;color:var(--gold);line-height:1.3}
+.done h2{margin:0;font-family:var(--f-tr);font-size:28px}
+.done p{margin:0;color:var(--muted);max-width:34ch}
+
+/* tab bar */
+.tabs{position:fixed;inset:auto 0 0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.tabs .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);height:52px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:600;color:var(--muted)}
+.tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{color:var(--wine)}
+.studying .tabs{display:none}
+.studying .app{padding-block-end:calc(env(safe-area-inset-bottom,0px) + 16px)}
+
+/* agregar palabras */
+.add-row{display:flex;gap:8px;flex-wrap:wrap}
+.add-row .ghost{flex:1 1 auto}
+.form{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.form h2{margin:0;font-size:17px}
+.form p{margin:0;font-size:14px;color:var(--muted)}
+.fld{display:flex;flex-direction:column;gap:4px}
+.fld label{font-size:13px;font-weight:600;color:var(--muted)}
+.fld input,.fld textarea,.fld select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:16px}
+.fld input.he{font-family:var(--f-heb);font-size:28px;direction:rtl;line-height:1.4;padding:6px 12px}
+.fld textarea{min-height:140px;resize:vertical;line-height:1.6}
+.fld textarea.he-mix{font-family:var(--f-heb),var(--f-ui)}
+.err{font-size:13px;color:var(--bad);font-weight:600}
+.okmsg{font-size:14px;color:var(--ok);font-weight:600}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two>*{min-width:0}
+.fmt{font-size:13px;color:var(--muted);background:var(--sunk);border-radius:10px;padding:10px 12px;line-height:1.7;overflow-x:auto}
+.fmt code{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;white-space:pre}
+.fmt .heb{font-size:17px}
+.own{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);background:var(--gold-soft);border-radius:6px;padding:1px 6px;margin-inline-start:6px;vertical-align:middle}
+.w-detail .act{display:flex;gap:8px;flex-wrap:wrap;padding-top:4px}
+.copybox{width:100%;min-height:110px;font-family:ui-monospace,Menlo,monospace;font-size:12px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+@media (max-width:420px){.two{grid-template-columns:1fr}}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+html{padding-top:env(safe-area-inset-top,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<nav class="tabs" aria-label="Secciones">
+  <div class="in">
+    <button class="tab" data-tab="home" aria-current="page">
+      <svg viewBox="0 0 24 24"><path d="M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4z"/></svg>Estudiar</button>
+    <button class="tab" data-tab="list">
+      <svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>Vocabulario</button>
+    <button class="tab" data-tab="settings">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes</button>
+  </div>
+</nav>
+
+<script src="vocabulario.js"></script>
+<script>
+"use strict";
+/* ---------- Vocabulario base (por frecuencia). Transliteración: sistema de Kelley ---------- */
+const BASE = Array.isArray(window.VOCAB) ? window.VOCAB : [];
+
+/* ---------- Estado persistente ---------- */
+const KEY="dabar.v1";
+const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const addDays=(s,n)=>{const [y,m,d]=s.split("-").map(Number);const t=new Date(y,m-1,d+n);return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0")};
+const fresh=()=>({cards:{},days:[],newPerDay:40,newDone:{},showNiqqud:true,strictNiqqud:true,dir:"he",custom:[],nextId:100001});
+let S=fresh();
+try{const raw=localStorage.getItem(KEY);if(raw)S=Object.assign(fresh(),JSON.parse(raw))}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+/* La lista completa = vocabulario base + palabras que agregó este usuario */
+let WORDS=[];
+function rebuild(){
+  const base=BASE.map(([n,heb,tr,cat,es,freq,note])=>({id:n,heb,tr,cat,es,freq,note,own:false}));
+  WORDS=[...base,...(S.custom||[]).map(w=>({...w,own:true}))].map((w,i)=>({...w,n:i+1}));
+}
+rebuild();
+const byId=id=>WORDS.find(x=>x.id===id);
+
+const ck=(id,mode)=>id+":"+mode;
+const card=(id,mode)=>S.cards[ck(id,mode)];
+const isDue=(id,mode)=>{const c=card(id,mode);return c&&c.due<=today()};
+const newLeft=mode=>Math.max(0,S.newPerDay-((S.newDone[today()]||{})[mode]||0));
+function queueFor(mode){
+  const due=WORDS.filter(w=>isDue(w.id,mode));
+  const news=WORDS.filter(w=>!card(w.id,mode)).slice(0,newLeft(mode));
+  return {due,news};
+}
+function preview(c,g){
+  c=c||{ease:2.5,ivl:0,reps:0};
+  if(g===1) return 0;
+  if(g===2) return Math.max(1,Math.round(c.ivl*1.2));
+  if(g===3) return c.reps===0?1:c.reps===1?3:Math.round(c.ivl*c.ease);
+  return c.reps===0?4:Math.round(Math.max(c.ivl,1)*c.ease*1.3);
+}
+function grade(id,mode,g){
+  const k=ck(id,mode), was=S.cards[k], c=was?{...was}:{ease:2.5,ivl:0,reps:0};
+  if(!was){const t=today();S.newDone[t]=S.newDone[t]||{};S.newDone[t][mode]=(S.newDone[t][mode]||0)+1}
+  const ivl=preview(c,g);
+  if(g===1){c.reps=0;c.ease=Math.max(1.3,c.ease-0.2);c.ivl=0}
+  else{c.ease=Math.min(3.2,Math.max(1.3,c.ease+(g===2?-0.15:g===4?0.15:0)));c.ivl=ivl;c.reps++}
+  c.due=addDays(today(),c.ivl);
+  S.cards[k]=c;
+  if(!S.days.includes(today()))S.days.push(today());
+  save();
+}
+const fmtIvl=n=>n===0?"<10 min":n===1?"1 día":n<30?n+" días":Math.round(n/30)+" mes"+(Math.round(n/30)>1?"es":"");
+function streak(){let n=0,d=today();if(!S.days.includes(d))d=addDays(d,-1);while(S.days.includes(d)){n++;d=addDays(d,-1)}return n}
+function level(id){const a=card(id,"read"),b=card(id,"write");const m=Math.max(a?a.ivl:-1,b?b.ivl:-1);return m>=7?2:m>=0?1:0}
+
+/* ---------- Hebreo ---------- */
+const strip=s=>s.replace(/[֑-ׇ]/g,"");
+const FINALS={"כ":"ך","מ":"ם","נ":"ן","פ":"ף","צ":"ץ"};
+const vis=s=>S.showNiqqud?s:strip(s);
+const norm=s=>s.replace(/[\s־]/g,"").normalize("NFD");
+const clusters=s=>norm(s).match(/[א-ת][֑-ׇ]*|[֑-ׇ]+/g)||[];
+const VOWELS=[
+ ["ָ","qámets"],["ַ","pátaj"],["ֶ","ségol"],["ֵ","tseré"],["ִ","jíreq"],["ֹ","jólem"],["ֻ","qibbúts"],
+ ["ְ","shevá"],["ֲ","j. pátaj"],["ֱ","j. ségol"],["ֳ","j. qámets"],["ּ","dagesh"],["ׁ","shin ׁ"],["ׂ","sin ׂ"]];
+
+/* ---------- Render ---------- */
+const $app=document.getElementById("app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let tab="home", session=null, listOpen=null, confirmReset=false, sub=null, delAsk=null, flash="";
+
+function setTab(t){tab=t;session=null;sub=null;delAsk=null;flash="";document.body.classList.remove("studying");
+  document.querySelectorAll(".tab").forEach(b=>{if(b.dataset.tab===t)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  render();window.scrollTo(0,0)}
+document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>setTab(b.dataset.tab)));
+
+function render(){
+  if(session) return renderStudy();
+  if(tab==="home") return renderHome();
+  if(tab==="list") return renderList();
+  renderSettings();
+}
+
+function renderHome(){
+  const r=queueFor("read"), w=queueFor("write");
+  const pending=r.due.length+w.due.length, fresh=r.news.length+w.news.length;
+  const learned=WORDS.filter(x=>level(x.id)===2).length, seen=WORDS.filter(x=>level(x.id)>0).length;
+  $app.innerHTML=`<div class="view">
+   <header class="brand"><h1>Dabar<span class="heb">דָּבָר</span></h1><span class="eyebrow">Hebreo bíblico</span></header>
+   ${BASE.length?"":`<div class="err" role="alert">No se pudo leer el archivo vocabulario.js. Revisa que cada línea termine en coma y que el archivo cierre con ];</div>`}
+   <section class="hero">
+     <div class="due-row"><div class="due-num">${pending+fresh}</div>
+       <div class="due-lbl"><b>tarjetas para hoy</b>${pending} de repaso · ${fresh} nuevas</div></div>
+     <div class="stats">
+       <div class="stat"><b>${seen}<span style="font-size:13px;color:var(--muted)">/${WORDS.length}</span></b><span>vistas</span></div>
+       <div class="stat"><b>${learned}</b><span>dominadas</span></div>
+       <div class="stat"><b>${streak()}</b><span>días seguidos</span></div>
+     </div>
+     <div class="progress" aria-label="Progreso"><i style="width:${Math.round(seen/WORDS.length*100)}%"></i></div>
+   </section>
+   <div class="modes">
+     <button class="mode read" data-mode="read"><span class="glyph">א</span><span><h2>Reconocer</h2><p>Ves la palabra y recuerdas su significado</p></span><span class="count">${r.due.length+r.news.length}</span></button>
+     <button class="mode write" data-mode="write"><span class="glyph">✎</span><span><h2>Escribir</h2><p>Ves el significado y la escribes en hebreo</p></span><span class="count">${w.due.length+w.news.length}</span></button>
+   </div>
+   <div class="verse"><span class="eyebrow">Vocabulario por frecuencia · palabras 1–${WORDS.length}</span>
+     <span class="heb">וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר</span><span>«Y dijo Dios: Sea la luz» — Gn 1:3. Ya reconoces varias de sus raíces.</span></div>
+  </div>`;
+  $app.querySelectorAll(".mode").forEach(b=>b.addEventListener("click",()=>startSession(b.dataset.mode)));
+}
+
+function startSession(mode,practice){
+  let {due,news}=queueFor(mode);
+  let q=[...due,...news];
+  if(!q.length&&practice) q=[...WORDS].sort(()=>Math.random()-.5).slice(0,10);
+  session={mode,queue:q.map(w=>w.id),total:q.length,done:0,revealed:false,typed:"",checked:null,practice:!!practice&&!due.length&&!news.length};
+  document.body.classList.add("studying");
+  render();window.scrollTo(0,0);
+}
+
+function renderStudy(){
+  const s=session;
+  if(!s.queue.length){
+    $app.innerHTML=`<div class="view"><div class="topbar"><button class="icon-btn" id="x" aria-label="Volver">✕</button><div class="progress"><i style="width:100%"></i></div><span class="left">0</span></div>
+      <div class="done"><span class="heb">טוֹב מְאֹד</span><h2>¡Muy bien!</h2>
+      <p>${s.total?`Repasaste ${s.total} tarjeta${s.total>1?"s":""}. `:"No tienes tarjetas pendientes en este modo. "}Vuelve mañana para el siguiente repaso.</p>
+      <div class="hint-row"><button class="ghost" id="extra">Práctica libre (10 al azar)</button><button class="ghost" id="home">Volver al inicio</button></div></div></div>`;
+    $app.querySelector("#x").onclick=()=>setTab("home");
+    $app.querySelector("#home").onclick=()=>setTab("home");
+    $app.querySelector("#extra").onclick=()=>startSession(s.mode,true);
+    return;
+  }
+  const w=byId(s.queue[0]), c=card(w.id,s.mode);
+  if(!w){s.queue.shift();return renderStudy()}
+  const pct=s.total?Math.round(s.done/(s.done+s.queue.length)*100):0;
+  const top=`<div class="topbar"><button class="icon-btn" id="x" aria-label="Terminar sesión">✕</button><div class="progress"><i style="width:${pct}%"></i></div><span class="left">${s.queue.length}</span></div>`;
+  const tagTxt=s.practice?"Práctica":!c?"Nueva":"Repaso";
+  const grades=sugg=>`<div class="grades">${[[1,"again","Otra vez"],[2,"hard","Difícil"],[3,"good","Bien"],[4,"easy","Fácil"]].map(([g,cl,l])=>
+    `<button class="grade ${cl}${sugg===g?" suggest":""}" data-g="${g}">${l}<small>${s.practice?"—":fmtIvl(preview(c,g))}</small></button>`).join("")}</div>`;
+  const detail=`<div class="answer">${s.mode==="write"?`<div class="heb heb-ans">${S.strictNiqqud?w.heb:vis(w.heb)}</div>`:""}
+      ${w.tr?`<div class="tr">${esc(w.tr)}</div>`:""}<div class="mean">${esc(w.es)}</div>${w.note?`<div class="note">${esc(w.note)}</div>`:""}</div>`;
+
+  if(s.mode==="read"){
+    const front=S.dir==="he"
+      ?`<div class="big-heb">${vis(w.heb)}</div>`
+      :`<div class="big-es">${esc(w.es)}</div><div class="note">${esc(w.cat||"")}</div>`;
+    $app.innerHTML=`<div class="view">${top}
+      <div class="card"><span class="tag">${tagTxt}</span><span class="freq">${w.own?"Tuya":w.freq?w.freq.toLocaleString("es")+"×":""}</span>
+        ${front}${s.revealed?(S.dir==="he"?detail:`<div class="answer"><div class="heb heb-ans">${vis(w.heb)}</div><div class="tr">${esc(w.tr)}</div>${w.note?`<div class="note">${esc(w.note)}</div>`:""}</div>`):""}</div>
+      ${s.revealed?grades(0):`<button class="primary" id="reveal">Mostrar respuesta</button>`}
+      ${s.revealed?"":`<div class="hint-row"><button class="ghost" id="dir">${S.dir==="he"?"Cambiar a español → hebreo":"Cambiar a hebreo → español"}</button></div>`}
+    </div>`;
+    const r=$app.querySelector("#reveal"); if(r) r.onclick=()=>{s.revealed=true;render()};
+    const d=$app.querySelector("#dir"); if(d) d.onclick=()=>{S.dir=S.dir==="he"?"es":"he";save();render()};
+  } else {
+    let slot, diff="";
+    if(s.checked){
+      const ok=s.checked.ok;
+      slot=`<div class="slot ${ok?"ok":"bad"}">${esc(s.typed)||"&nbsp;"}</div>`;
+      if(!ok) diff=diffHtml(s.typed,w.heb);
+    } else slot=`<div class="slot${s.typed?"":" empty"}" aria-live="polite">${esc(s.typed)}${s.typed?'<span class="caret"></span>':""}</div>`;
+    const sugg=s.checked?(s.checked.ok?(s.checked.hinted?2:3):(s.checked.consOk?2:1)):0;
+    $app.innerHTML=`<div class="view">${top}
+      <div class="card"><span class="tag">${tagTxt}</span><span class="freq">${esc(w.cat||"")}</span>
+        <div class="big-es">${esc(w.es)}</div>
+        ${s.hint&&!s.checked?`<div class="tr" style="font-size:22px;color:var(--wine)">${esc(w.tr||strip(w.heb).length+" letras")}</div>`:""}
+        ${slot}${diff}${s.checked?detail:""}</div>
+      ${s.checked?grades(sugg):`
+        <div class="hint-row"><button class="ghost" id="hint">${s.hint?"Pista mostrada":"Pista: transliteración"}</button><button class="ghost" id="giveup">No sé</button></div>
+        ${keyboard()}
+        <button class="primary" id="check">Comprobar</button>`}
+    </div>`;
+    if(!s.checked){
+      $app.querySelectorAll(".key").forEach(k=>k.addEventListener("click",()=>{s.typed=applyKey(s.typed,k.dataset.k);render()}));
+      $app.querySelector("#check").onclick=check;
+      $app.querySelector("#hint").onclick=()=>{s.hint=true;render()};
+      $app.querySelector("#giveup").onclick=()=>{s.typed=s.typed||"";s.checked={ok:false};render()};
+    }
+  }
+  $app.querySelector("#x").onclick=()=>setTab("home");
+  $app.querySelectorAll(".grade").forEach(b=>b.addEventListener("click",()=>{
+    const g=+b.dataset.g, id=s.queue.shift();
+    if(!s.practice) grade(id,s.mode,g);
+    if(g===1) s.queue.splice(Math.min(3,s.queue.length),0,id); else s.done++;
+    s.revealed=false;s.typed="";s.checked=null;s.hint=false;render();
+  }));
+}
+function check(){
+  const s=session,w=byId(s.queue[0]);
+  const consOk=strip(norm(s.typed))===strip(norm(w.heb));
+  const full=norm(s.typed)===norm(w.heb);
+  // YHWH no lleva vocales en la lista: basta con las consonantes
+  const ok=S.strictNiqqud&&strip(w.heb)!==w.heb?full:consOk;
+  s.checked={ok,consOk,hinted:!!s.hint};render();
+}
+function diffHtml(typed,ans){
+  const strict=S.strictNiqqud;
+  const f=x=>strict?x:strip(x);
+  const t=clusters(typed).map(f).filter(Boolean), a=clusters(ans).map(f);
+  const yours=t.length?t.map((ch,i)=>`<span class="ch ${ch===a[i]?"ok":"bad"}">${esc(ch)}</span>`).join(""):`<span class="note">(sin respuesta)</span>`;
+  const right=a.map((ch,i)=>`<span class="ch ${t[i]===ch?"ok":"miss"}">${ch}</span>`).join("");
+  let tip="";
+  const tc=t.map(strip), ac=a.map(strip), last=tc[tc.length-1], aLast=ac[ac.length-1];
+  if(strict&&tc.join("")===ac.join("")) tip=`<div class="note">Las consonantes están bien. Revisa las vocales marcadas en rojo.</div>`;
+  else if(tc.length===ac.length&&FINALS[last]===aLast) tip=`<div class="note">Casi: al final de palabra se usa la forma final <span class="heb" style="font-size:20px">${aLast}</span>.</div>`;
+  return `<div class="diff"><span class="lbl">Tu respuesta</span><div class="row">${yours}</div><span class="lbl">Correcta</span><div class="row">${right}</div>${tip}</div>`;
+}
+function applyKey(str,v){return v==="⌫"?[...str].slice(0,-1).join(""):v==="␣"?str+" ":str+v}
+function keyboard(){
+  const rows=[["א","ב","ג","ד","ה","ו","ז","ח"],["ט","י","כ","ל","מ","נ","ס","ע"],["פ","צ","ק","ר","ש","ת","␣","⌫"],["ך","ם","ן","ף","ץ"]];
+  return `<div class="kbd" role="group" aria-label="Teclado hebreo">${rows.map(r=>`<div class="r"${r.length<8?' style="grid-template-columns:repeat(8,1fr)"':""}>${r.map(k=>
+    `<button class="key${"ךםןףץ".includes(k)?" fin":""}${k==="⌫"||k==="␣"?" fn":""}" data-k="${k}" aria-label="${k==="⌫"?"Borrar":k==="␣"?"Espacio":k}">${k==="␣"?"espacio":k}</button>`).join("")}${r.length<8?`<span style="grid-column:span ${8-r.length};display:grid;place-items:center;font-size:12px;color:var(--muted);direction:ltr">formas finales</span>`:""}</div>`).join("")}
+    <div class="kbd-sep">Vocales y signos · toca la letra y luego su vocal</div>
+    <div class="vr">${VOWELS.slice(0,7).map(vk).join("")}</div>
+    <div class="vr">${VOWELS.slice(7).map(vk).join("")}</div>
+    <div class="r" style="grid-template-columns:repeat(8,1fr)"><button class="key fn" data-k="־" aria-label="Maqqef" style="grid-column:span 2">maqqef ־</button><span style="grid-column:span 6"></span></div></div>`;
+}
+function vk([m,name]){
+  return `<button class="key v" data-k="${m}" aria-label="${name}"><span class="g">◌${m}</span><small>${name.replace(/ [ׁׂ]$/,"")}</small></button>`;
+}
+
+function renderList(q){
+  if(sub==="add") return renderAdd();
+  q=q||"";
+  const f=strip(q).toLowerCase();
+  const items=WORDS.filter(w=>!f||w.es.toLowerCase().includes(f)||w.tr.toLowerCase().includes(f)||strip(w.heb).includes(f)||String(w.id)===f);
+  $app.innerHTML=`<div class="view">
+    <header class="brand"><h1>Vocabulario</h1><span class="eyebrow">${WORDS.length} palabras</span></header>
+    <div class="add-row"><button class="primary" id="add" style="padding:13px">＋ Agregar palabras</button></div>
+    ${flash?`<div class="okmsg">${esc(flash)}</div>`:""}
+    <input class="search" id="q" type="search" placeholder="Buscar por significado, transliteración o hebreo" value="${esc(q)}" autocomplete="off">
+    <div class="legend"><span><i class="dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--line)"></i>Sin estudiar</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold)"></i>Aprendiendo</span><span><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok)"></i>Dominada (7+ días)</span></div>
+    <div class="words">${items.map(w=>`
+      <button class="w" data-id="${w.id}" aria-expanded="${listOpen===w.id}"><span class="n">${w.n}</span>
+        <span class="m"><b>${esc(w.es)}<i class="dot l${level(w.id)}"></i>${w.own?'<span class="own">Tuya</span>':""}</b><span class="tr">${esc(w.tr)}</span></span>
+        <span class="heb">${vis(w.heb)}</span></button>
+      ${listOpen===w.id?`<div class="w-detail">${w.cat||w.freq?`<span>${w.cat?`<b style="color:var(--ink)">${esc(w.cat)}</b>`:""}${w.freq?` · aparece ${w.freq.toLocaleString("es")} veces en el AT`:""}</span>`:""}${w.note?`<span>${esc(w.note)}</span>`:""}${w.own?`<div class="act">${delAsk===w.id?`<button class="yes" data-del="${w.id}" style="background:var(--bad);color:var(--surface);padding:8px 12px;border-radius:10px;font-weight:600;font-size:14px">Sí, eliminar</button><button class="ghost" data-cancel="1">Cancelar</button>`:`<button class="ghost" data-ask="${w.id}" style="color:var(--bad)">Eliminar esta palabra</button>`}</div>`:""}</div>`:""}`).join("")||`<div class="w" style="grid-template-columns:1fr;color:var(--muted)">No hay palabras que coincidan.</div>`}</div>
+  </div>`;
+  const inp=$app.querySelector("#q");
+  inp.addEventListener("input",()=>{const pos=inp.selectionStart;renderList(inp.value);const n=$app.querySelector("#q");n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}});
+  $app.querySelectorAll(".w[data-id]").forEach(b=>b.addEventListener("click",()=>{const id=+b.dataset.id;listOpen=listOpen===id?null:id;delAsk=null;renderList(inp.value)}));
+  $app.querySelector("#add").onclick=()=>{sub="add";flash="";render();window.scrollTo(0,0)};
+  $app.querySelectorAll("[data-ask]").forEach(b=>b.onclick=()=>{delAsk=+b.dataset.ask;renderList(inp.value)});
+  $app.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>{delAsk=null;renderList(inp.value)});
+  $app.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    const id=+b.dataset.del;S.custom=S.custom.filter(w=>w.id!==id);
+    delete S.cards[ck(id,"read")];delete S.cards[ck(id,"write")];save();rebuild();delAsk=null;listOpen=null;flash="Palabra eliminada.";renderList(inp.value)});
+}
+
+/* ---------- Agregar palabras ---------- */
+const HEB_RE=/[\u05D0-\u05EA]/;
+function addWord(o){
+  const heb=(o.heb||"").trim().normalize("NFC"), es=(o.es||"").trim();
+  if(!HEB_RE.test(heb)) return "Escribe la palabra en hebreo.";
+  if(!es) return "Escribe el significado.";
+  if(WORDS.some(w=>norm(w.heb)===norm(heb)&&w.es.trim().toLowerCase()===es.toLowerCase())) return "dup";
+  S.custom.push({id:S.nextId++,heb,es,tr:(o.tr||"").trim(),cat:(o.cat||"").trim(),note:(o.note||"").trim(),freq:0});
+  return "";
+}
+function parseLines(text){
+  const out=[];
+  text.split(/\r?\n/).forEach((line,i)=>{
+    if(!line.trim()) return;
+    const f=line.split("|").map(x=>x.trim());
+    out.push({line:i+1,heb:f[0],es:f[1],tr:f[2],cat:f[3],note:f.slice(4).join(" | ")});
+  });
+  return out;
+}
+let addState={heb:"",kbd:true,err:"",bulkErr:"",bulk:""};
+function renderAdd(){
+  const a=addState;
+  const own=S.custom.length;
+  $app.innerHTML=`<div class="view">
+    <div class="topbar"><button class="icon-btn" id="back" aria-label="Volver a la lista">←</button><h1 style="margin:0;font-family:var(--f-tr);font-size:24px">Agregar palabras</h1></div>
+    ${flash?`<div class="okmsg">${esc(flash)}</div>`:""}
+
+    <section class="form" aria-labelledby="h-one">
+      <h2 id="h-one">Una palabra</h2>
+      <div class="fld"><label for="f-heb">Hebreo</label>
+        <input id="f-heb" class="he" dir="rtl" lang="he" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(a.heb)}" placeholder="עִיר"></div>
+      <div class="hint-row" style="justify-content:flex-start"><button class="ghost" id="tkb">${a.kbd?"Ocultar teclado hebreo":"Mostrar teclado hebreo"}</button></div>
+      ${a.kbd?`<div id="addkbd">${keyboard()}</div>`:""}
+      <div class="fld"><label for="f-es">Significado</label><input id="f-es" autocomplete="off" placeholder="Ciudad (f)"></div>
+      <div class="two">
+        <div class="fld"><label for="f-tr">Transliteración (opcional)</label><input id="f-tr" autocomplete="off" autocapitalize="off" placeholder="ʿîr"></div>
+        <div class="fld"><label for="f-cat">Categoría (opcional)</label>
+          <select id="f-cat"><option value="">—</option>${["Sustantivo","Verbo","Adjetivo","Preposición","Conjunción","Partícula","Pronombre","Numeral","Nombre propio","Adverbio"].map(c=>`<option>${c}</option>`).join("")}</select></div>
+      </div>
+      <div class="fld"><label for="f-note">Nota (opcional)</label><input id="f-note" autocomplete="off" placeholder="Plural, raíz, versículo…"></div>
+      ${a.err?`<div class="err" role="alert">${esc(a.err)}</div>`:""}
+      <button class="primary" id="save1">Guardar palabra</button>
+    </section>
+
+    <section class="form" aria-labelledby="h-many">
+      <h2 id="h-many">Varias a la vez</h2>
+      <p>Pega una palabra por línea. Separa los datos con una barra vertical <b>|</b>. Solo el hebreo y el significado son obligatorios.</p>
+      <div class="fmt"><code>hebreo | significado | transliteración | categoría | nota</code><br>
+        <span class="heb">שֵׁם</span> | Nombre | šēm | Sustantivo<br>
+        <span class="heb">אֲנִי</span> | Yo</div>
+      <div class="fld"><label for="f-bulk">Lista de palabras</label><textarea id="f-bulk" class="he-mix" spellcheck="false" autocapitalize="off" placeholder="עִיר | Ciudad (f) | ʿîr | Sustantivo">${esc(a.bulk)}</textarea></div>
+      ${a.bulkErr?`<div class="err" role="alert">${a.bulkErr}</div>`:""}
+      <button class="primary" id="saveN">Importar lista</button>
+    </section>
+
+    <section class="form" aria-labelledby="h-share">
+      <h2 id="h-share">Tus palabras: ${own}</h2>
+      <p>Las palabras que agregas se guardan solo en este teléfono. Si administras la app en GitHub y quieres que todos las tengan, copia este bloque y pégalo en el archivo <b>vocabulario.js</b>.</p>
+      <button class="ghost" id="exp" ${own?"":"disabled"}>Copiar para vocabulario.js</button>
+      <div id="expout"></div>
+    </section>
+  </div>`;
+
+  const heb=$app.querySelector("#f-heb");
+  heb.addEventListener("input",()=>{a.heb=heb.value});
+  $app.querySelector("#back").onclick=()=>{sub=null;flash="";render();window.scrollTo(0,0)};
+  $app.querySelector("#tkb").onclick=()=>{a.kbd=!a.kbd;keepFields(renderAdd)};
+  $app.querySelectorAll("#addkbd .key").forEach(k=>k.addEventListener("click",()=>{a.heb=applyKey(a.heb,k.dataset.k);heb.value=a.heb}));
+  $app.querySelector("#f-bulk").addEventListener("input",e=>{a.bulk=e.target.value;if(a.bulkErr){a.bulkErr="";}});
+  ["f-es","f-heb"].forEach(id=>$app.querySelector("#"+id).addEventListener("input",()=>{if(a.err){a.err="";const e=$app.querySelector(".form .err");if(e)e.remove()}}));
+
+  $app.querySelector("#save1").onclick=()=>{
+    const r=addWord({heb:a.heb,es:val("f-es"),tr:val("f-tr"),cat:val("f-cat"),note:val("f-note")});
+    if(r==="dup"){a.err="Esa palabra ya está en tu lista.";return keepFields(renderAdd)}
+    if(r){a.err=r;return keepFields(renderAdd)}
+    save();rebuild();a.heb="";a.err="";flash="Guardada. Ya aparece en tus tarjetas nuevas.";renderAdd();
+    window.scrollTo(0,0);
+  };
+  $app.querySelector("#saveN").onclick=()=>{
+    const rows=parseLines(a.bulk);
+    if(!rows.length){a.bulkErr="Pega al menos una línea.";return keepFields(renderAdd)}
+    let ok=0,dup=0;const bad=[];
+    rows.forEach(r=>{const m=addWord(r);if(!m)ok++;else if(m==="dup")dup++;else bad.push(r.line)});
+    if(ok){save();rebuild()}
+    if(bad.length){
+      a.bulkErr=`${ok?`Se agregaron ${ok}. `:""}Revisa ${bad.length>1?"las líneas":"la línea"} ${bad.join(", ")}: cada línea necesita el hebreo, una barra | y el significado.`;
+      a.bulk=a.bulk.split(/\r?\n/).filter((l,i)=>bad.includes(i+1)).join("\n");
+      return keepFields(renderAdd);
+    }
+    a.bulk="";a.bulkErr="";flash=`Se agregaron ${ok} palabra${ok===1?"":"s"}${dup?` (${dup} ya existían)`:""}.`;renderAdd();window.scrollTo(0,0);
+  };
+  $app.querySelector("#exp").onclick=()=>{
+    const start=BASE.length;
+    const txt=S.custom.map((w,i)=>" ["+[start+i+1,JSON.stringify(w.heb),JSON.stringify(w.tr),JSON.stringify(w.cat),JSON.stringify(w.es),0,JSON.stringify(w.note)].join(",")+"],").join("\n");
+    const box=$app.querySelector("#expout");
+    const show=msg=>{box.innerHTML=`<p class="${msg?"okmsg":""}" style="margin:0 0 6px">${msg||"Selecciona y copia el texto:"}</p><textarea class="copybox" readonly>${esc(txt)}</textarea>`;const t=box.querySelector("textarea");t.focus();t.select()};
+    try{navigator.clipboard.writeText(txt).then(()=>show("Copiado. Pégalo antes de la línea ]; en vocabulario.js.")).catch(()=>show(""))}catch(e){show("")}
+  };
+}
+const val=id=>{const e=document.getElementById(id);return e?e.value:""};
+function keepFields(fn){
+  const keep={};["f-es","f-tr","f-cat","f-note"].forEach(id=>keep[id]=val(id));
+  fn();
+  Object.entries(keep).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v});
+}
+
+/* ---------- Copia de seguridad ---------- */
+function backupText(){return JSON.stringify({app:"dabar",v:1,data:S})}
+function restore(txt){
+  const o=JSON.parse(txt.trim());
+  if(!o||o.app!=="dabar"||!o.data||typeof o.data!=="object") throw new Error("bad");
+  S=Object.assign(fresh(),o.data);save();rebuild();
+}
+let bkState={open:null,msg:"",err:""};
+
+function renderSettings(){
+  $app.innerHTML=`<div class="view">
+    <header class="brand"><h1>Ajustes</h1></header>
+    <div class="panel">
+      <div class="set"><div class="t"><b>Palabras nuevas por día</b><span>En cada modo</span></div>
+        <div class="stepper"><button id="m" aria-label="Menos">−</button><output>${S.newPerDay}</output><button id="p" aria-label="Más">+</button></div></div>
+      <div class="set"><div class="t"><b>Mostrar vocales (niqqud)</b><span>En las tarjetas y en la lista</span></div>
+        <button class="switch" id="nq" role="switch" aria-checked="${S.showNiqqud}" aria-label="Mostrar vocales"></button></div>
+      <div class="set"><div class="t"><b>Exigir vocales al escribir</b><span>Si lo apagas, solo se corrigen las consonantes</span></div>
+        <button class="switch" id="sn" role="switch" aria-checked="${S.strictNiqqud}" aria-label="Exigir vocales"></button></div>
+      <div class="set"><div class="t"><b>Copia de seguridad</b><span>Para pasar tu progreso y tus palabras a otro teléfono</span></div>
+        <div class="confirm"><button class="ghost" id="bk-out">Copiar</button><button class="ghost" id="bk-in">Restaurar</button></div></div>
+      ${bkState.open?`<div class="set" style="flex-direction:column;align-items:stretch">
+        ${bkState.open==="out"?`<span style="font-size:13px;color:var(--muted)">${bkState.msg||"Copia este texto y guárdalo (por ejemplo, en Notas):"}</span><textarea class="copybox" id="bk-txt" readonly>${esc(backupText())}</textarea>`
+        :`<span style="font-size:13px;color:var(--muted)">Pega aquí el texto de tu copia. Reemplazará el progreso de este teléfono.</span><textarea class="copybox" id="bk-txt"></textarea>${bkState.err?`<div class="err">${esc(bkState.err)}</div>`:""}<button class="primary" id="bk-go">Restaurar copia</button>`}
+      </div>`:""}
+      ${bkState.msg&&!bkState.open?`<div class="set"><span class="okmsg">${esc(bkState.msg)}</span></div>`:""}
+      <div class="set"><div class="t"><b>Reiniciar progreso</b><span>Borra el historial de repasos de este iPhone</span></div>
+        ${confirmReset?`<div class="confirm"><button class="yes" id="yes">Borrar</button><button class="ghost" id="no">Cancelar</button></div>`:`<button class="danger" id="reset">Reiniciar</button>`}</div>
+    </div>
+    <div class="help"><span class="eyebrow">Instalar en el iPhone</span>
+      <ol><li>Abre esta página en Safari.</li><li>Toca <b>Compartir</b> y luego <b>Añadir a pantalla de inicio</b>.</li><li>Ábrela siempre desde ese ícono: tu progreso se guarda allí.</li></ol>
+      <span>Transliteración según el sistema de Kelley. Vocabulario por frecuencia del curso: palabras 1–${BASE.length}${S.custom.length?`, más ${S.custom.length} tuyas`:""}.</span></div>
+  </div>`;
+  $app.querySelector("#m").onclick=()=>{S.newPerDay=Math.max(1,S.newPerDay-1);save();renderSettings()};
+  $app.querySelector("#p").onclick=()=>{S.newPerDay=Math.min(100,S.newPerDay+1);save();renderSettings()};
+  $app.querySelector("#nq").onclick=()=>{S.showNiqqud=!S.showNiqqud;save();renderSettings()};
+  $app.querySelector("#sn").onclick=()=>{S.strictNiqqud=!S.strictNiqqud;save();renderSettings()};
+  const r=$app.querySelector("#reset"); if(r) r.onclick=()=>{confirmReset=true;renderSettings()};
+  const y=$app.querySelector("#yes"); if(y) y.onclick=()=>{const keep={newPerDay:S.newPerDay,showNiqqud:S.showNiqqud,strictNiqqud:S.strictNiqqud,dir:S.dir};S=Object.assign(fresh(),keep);save();confirmReset=false;renderSettings()};
+  const n=$app.querySelector("#no"); if(n) n.onclick=()=>{confirmReset=false;renderSettings()};
+  $app.querySelector("#bk-out").onclick=()=>{
+    bkState={open:"out",msg:"",err:""};
+    try{navigator.clipboard.writeText(backupText()).then(()=>{bkState.msg="Copiado. Guárdalo en Notas o envíatelo por mensaje.";renderSettings()}).catch(()=>{renderSettings();selBk()})}catch(e){renderSettings();selBk()}
+  };
+  $app.querySelector("#bk-in").onclick=()=>{bkState={open:"in",msg:"",err:""};renderSettings();const t=document.getElementById("bk-txt");if(t)t.focus()};
+  const go=$app.querySelector("#bk-go"); if(go) go.onclick=()=>{
+    try{restore(val("bk-txt"));bkState={open:null,msg:"Copia restaurada.",err:""}}catch(e){bkState.err="Ese texto no es una copia de Dabar. Pega el texto completo que copiaste."}
+    renderSettings();
+  };
+}
+
+function selBk(){const t=document.getElementById("bk-txt");if(t){t.focus();t.select()}}
+
+/* teclado físico en computadora */
+document.addEventListener("keydown",e=>{
+  if(!session||session.mode!=="write"||session.checked||e.target.tagName==="INPUT")return;
+  if(e.key==="Backspace"){session.typed=session.typed.slice(0,-1);render();e.preventDefault()}
+  else if(e.key==="Enter"){check();e.preventDefault()}
+  else if(/^[א-ת֑-ׇ]$/.test(e.key)){session.typed+=e.key;render()}
+});
+
+render();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+</script>
+</body>
+</html>
